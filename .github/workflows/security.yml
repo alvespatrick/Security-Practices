@@ -1,0 +1,32 @@
+name: Detect Sensitive Information
+
+on:
+  push:
+    branches:
+      - '**' # Runs on all branches
+
+jobs:
+  scan-for-secrets:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v2
+
+      - name: Run truffleHog to detect sensitive data
+        uses: trufflesecurity/trufflehog@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo_path: '.' # Scans the entire repository
+
+      - name: Run GitLeaks to detect sensitive data
+        uses: zricethezav/gitleaks-action@v2
+        with:
+          config: '' # Optional custom configuration for specific sensitive data patterns
+          repo-path: '.'
+
+      - name: Fail Workflow if Sensitive Data is Detected
+        if: failure() # This step runs only if any of the previous steps fail
+        run: |
+          echo "🚨 Detected sensitive data in the push. Please review and remove any secrets before pushing again."
+          exit 1
